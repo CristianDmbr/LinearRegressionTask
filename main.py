@@ -41,7 +41,7 @@ X_raw["total_bedrooms"].fillna(mean_total_bedrooms, inplace=True)
 #print(X_raw[X_raw["total_bedrooms"].isnull()])
 
 # The varible that the model is testing with the target.
-features = ['total_rooms']
+features = ['total_bedrooms']
 X_raw_features = X_raw[features]
 
 # Preprocessing.
@@ -92,21 +92,30 @@ X_disp = X_test[:,0]
 # Plot outputs
 plt.scatter(X_disp, y_test,  color='black', label='y_test')
 plt.scatter(X_disp, y_pred, color='blue', label='y_pred') 
-plt.xlabel('Total Rooms')
+plt.xlabel('Total Bedrooms')
 plt.ylabel('Median House Value')
 plt.legend()
 plt.show()
 
-# Regression metrics
-mae = mean_absolute_error(y_test, y_pred)
-rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-max_err = max_error(y_test, y_pred)
-medae = median_absolute_error(y_test, y_pred)
+# Regression metrics for both training and testing sets
+mae_train = mean_absolute_error(y_train, y_pred_train)
+rmse_train = np.sqrt(mean_squared_error(y_train, y_pred_train))
+max_err_train = max_error(y_train, y_pred_train)
+medae_train = median_absolute_error(y_train, y_pred_train)
 
-# Prints the regression metrics
-print('Train - MSE: {:.4f} R2 score: {:.4f}'.format(sklearn.metrics.mean_squared_error(y_train, y_pred_train),sklearn.metrics.r2_score(y_train, y_pred_train)))
-print('Test - MSE: {:.4f} R2 score: {:.4f}'.format(sklearn.metrics.mean_squared_error(y_test, y_pred),sklearn.metrics.r2_score(y_test, y_pred)))
-print('Test - MAE: {:.4f}'.format(mae))
-print('Test - RMSE: {:.4f}'.format(rmse))
-print('Test - Max Error: {:.4f}'.format(max_err))
-print('Test - Median Absolute Error: {:.4f}'.format(medae))
+mae_test = mean_absolute_error(y_test, y_pred)
+rmse_test = np.sqrt(mean_squared_error(y_test, y_pred))
+max_err_test = max_error(y_test, y_pred)
+medae_test = median_absolute_error(y_test, y_pred)
+
+# Prints the regression metrics for both training and testing sets
+print('Train - MSE: {:.4f} R2 score: {:.4f}'.format(mean_squared_error(y_train, y_pred_train), r2_score(y_train, y_pred_train)))
+print('Test - MSE: {:.4f} R2 score: {:.4f}'.format(mean_squared_error(y_test, y_pred), r2_score(y_test, y_pred)))
+print('Train - MAE: {:.4f}'.format(mae_train))
+print('Test - MAE: {:.4f}'.format(mae_test))
+print('Train - RMSE: {:.4f}'.format(rmse_train))
+print('Test - RMSE: {:.4f}'.format(rmse_test))
+print('Train - Max Error: {:.4f}'.format(max_err_train))
+print('Test - Max Error: {:.4f}'.format(max_err_test))
+print('Train - Median Absolute Error: {:.4f}'.format(medae_train))
+print('Test - Median Absolute Error: {:.4f}'.format(medae_test))
