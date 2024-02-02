@@ -31,6 +31,8 @@ y_raw = testData[target]
 # Categorical / String feature stats
 #print(X_raw.select_dtypes(exclude=np.number).describe())
 
+print(pd.unique(X_raw['ocean_proximity']))
+
 # From description of numerical data features total_bedrooms is missing 9 records.
 # Filling in the missing values for the total_bedrooms feature is done by using the encoded mean of the collumn.
 mean_total_bedrooms = X_raw["total_bedrooms"].mean()
@@ -41,7 +43,7 @@ X_raw["total_bedrooms"].fillna(mean_total_bedrooms, inplace=True)
 #print(X_raw[X_raw["total_bedrooms"].isnull()])
 
 # The varible that the model is testing with the target.
-features = ['total_bedrooms']
+features = ['ocean_proximity']
 X_raw_features = X_raw[features]
 
 # Preprocessing.
@@ -63,6 +65,7 @@ X_train_num_imp = numeric_imputer.transform(X_train_num)
 X_test_num = X_test_raw.select_dtypes(include=np.number)
 X_test_num_imp = numeric_imputer.transform(X_test_num)
 
+# Feature scalling
 # Scaler Object.
 scaler = MinMaxScaler()
 # Fit on the numeric training data.
@@ -92,7 +95,7 @@ X_disp = X_test[:,0]
 # Plot outputs
 plt.scatter(X_disp, y_test,  color='black', label='y_test')
 plt.scatter(X_disp, y_pred, color='blue', label='y_pred') 
-plt.xlabel('Total Bedrooms')
+plt.xlabel('Ocean Proximity')
 plt.ylabel('Median House Value')
 plt.legend()
 plt.show()
