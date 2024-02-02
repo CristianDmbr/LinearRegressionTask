@@ -12,31 +12,18 @@ pd.options.mode.chained_assignment = None
 
 testData = pd.read_csv('housing_coursework_entire_dataset_23-24.csv') 
 
-# Set the features for ML to learn from.
 features = ["No.","longitude","latitude","housing_median_age","total_rooms","total_bedrooms","population","households","median_income","ocean_proximity"]
-# Target of the model is the Median House Price
 target = ["median_house_value"]
 
-# Sets the X axis / independent variables to be the features.
+
 X_raw = testData[features]
-#Remove the No. of the record because it's a irrelevant data feature training.
 X_raw = X_raw.drop(columns=['No.'])
 
-# Sets the Y axis / dependent variable to be the median_house_value
 y_raw = testData[target]
 
-# Used to meaasure the stats of the databases
-# Numerical features stats
-#print(X_raw.select_dtypes(include=np.number).describe())
-
-# From description of numerical data features total_bedrooms is missing 9 records.
-# Filling in the missing values for the total_bedrooms feature is done by using the encoded mean of the collumn.
+# Replace the missing values of total bedrooms with the mean.
 mean_total_bedrooms = X_raw["total_bedrooms"].mean()
-
-# Replace the missing values with the mean.
 X_raw["total_bedrooms"].fillna(mean_total_bedrooms, inplace=True)
-# Verify that there are no more missing values.
-#print(X_raw[X_raw["total_bedrooms"].isnull()])
 
 # Filling missing values of ocean proximity with most common category
 most_common_category = X_raw['ocean_proximity'].mode()[0]
@@ -46,6 +33,7 @@ X_raw["ocean_proximity"].fillna(most_common_category,inplace=True)
 print(X_raw.select_dtypes(exclude=np.number).describe())
 
 print(pd.unique(X_raw['ocean_proximity']))
+#print(X_raw.select_dtypes(include=np.number).describe())
 
 # The varible that the model is testing with the target.
 features = ['ocean_proximity']
