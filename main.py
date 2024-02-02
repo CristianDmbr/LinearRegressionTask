@@ -28,10 +28,6 @@ y_raw = testData[target]
 # Used to meaasure the stats of the databases
 # Numerical features stats
 #print(X_raw.select_dtypes(include=np.number).describe())
-# Categorical / String feature stats
-#print(X_raw.select_dtypes(exclude=np.number).describe())
-
-print(pd.unique(X_raw['ocean_proximity']))
 
 # From description of numerical data features total_bedrooms is missing 9 records.
 # Filling in the missing values for the total_bedrooms feature is done by using the encoded mean of the collumn.
@@ -41,6 +37,15 @@ mean_total_bedrooms = X_raw["total_bedrooms"].mean()
 X_raw["total_bedrooms"].fillna(mean_total_bedrooms, inplace=True)
 # Verify that there are no more missing values.
 #print(X_raw[X_raw["total_bedrooms"].isnull()])
+
+# Filling missing values of ocean proximity with most common category
+most_common_category = X_raw['ocean_proximity'].mode()[0]
+X_raw["ocean_proximity"].fillna(most_common_category,inplace=True)
+
+# Categorical / String feature stats
+print(X_raw.select_dtypes(exclude=np.number).describe())
+
+print(pd.unique(X_raw['ocean_proximity']))
 
 # The varible that the model is testing with the target.
 features = ['ocean_proximity']
