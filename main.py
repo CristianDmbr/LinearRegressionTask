@@ -1,129 +1,137 @@
-import numpy as np 
-import pandas as pd 
-import sklearn.linear_model, sklearn.datasets 
-from sklearn.preprocessing import StandardScaler, MinMaxScaler 
-import matplotlib.pyplot as plt 
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, mean_squared_log_error, max_error, median_absolute_error
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder 
-from sklearn.model_selection import train_test_split 
-from sklearn.impute import SimpleImputer 
-pd.options.mode.chained_assignment = None
+import numpy as np # A useful package for dealing with mathematical processes, we will be using it this week for vectors and matrices
+import pandas as pd # A common package for viewing tabular data
+import sklearn.linear_model, sklearn.datasets # We want to be able to access the sklearn datasets again, also we are using some model evaluation
+from sklearn.preprocessing import StandardScaler, MinMaxScaler # We will be using the imbuilt sclaing functions sklearn provides
+import matplotlib.pyplot as plt # We will be using Matplotlib for our graphs
+from sklearn.preprocessing import PolynomialFeatures # A preprocessing function allowing us to include polynomial features into our model
 
-testData = pd.read_csv('housing_coursework_entire_dataset_23-24.csv') 
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder # We will be using these to encode categorical features
+from sklearn.model_selection import train_test_split # An sklearn library for outomatically splitting our data
+from sklearn.impute import SimpleImputer # Performs basic imputations when doing preprocessing
+pd.options.mode.chained_assignment = None  # default='warn'
 
-# Set the features for ML to learn from.
-features = ["No.","longitude","latitude","housing_median_age","total_rooms","total_bedrooms","population","households","median_income","ocean_proximity"]
-# Target of the model is the Median House Price
-target = ["median_house_value"]
+# Your file is now in the Colab filesystem on the left
+testData = pd.read_csv('housing_coursework_entire_dataset_23-24.csv') # Save it to a pandas dataframe
 
-# Sets the X axis / independent variables to be the features.
+features = ["longitude","latitude","housing_median_age","total_rooms","total_bedrooms","population","households","median_income","ocean_proximity"]
+#features = ["longitude"]
 X_raw = testData[features]
-#Remove the No. of the record because it's a irrelevant data feature training.
-X_raw = X_raw.drop(columns=['No.'])
+y_raw = testData['median_house_value']
 
-# Sets the Y axis / dependent variable to be the median_house_value
-y_raw = testData[target]
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.20, shuffle=True, random_state=0)
 
-# Used to meaasure the stats of the databases
-# Numerical features stats
-#print(X_raw.select_dtypes(include=np.number).describe())
+# To apply the different imputers, we first have to split our data into separate numerical and categorical data
+X_train_num = X_train_raw.select_dtypes(include=np.number)
+X_train_cat = X_train_raw.select_dtypes(exclude=np.number)
 
-# From description of numerical data features total_bedrooms is missing 9 records.
-# Filling in the missing values for the total_bedrooms feature is done by using the encoded mean of the collumn.
-mean_total_bedrooms = X_raw["total_bedrooms"].mean()
+# Create our imputer objects
+numeric_imputer = SimpleImputer(strategy='mean')
+categorical_imputer = SimpleImputer(strategy='most_frequent')
 
-# Replace the missing values with the mean.
-X_raw["total_bedrooms"].fillna(mean_total_bedrooms, inplace=True)
-# Verify that there are no more missing values.
-#print(X_raw[X_raw["total_bedrooms"].isnull()])
+# Fit the imputers on the training data
+numeric_imputer.fit(X_train_num)
+categorical_imputer.fit(X_train_cat)
 
-# Filling missing values of ocean proximity with most common category
-most_common_category = X_raw['ocean_proximity'].mode()[0]
-X_raw["ocean_proximity"].fillna(most_common_category,inplace=True)
+# Transform the columns
+# Training
+X_train_num_imp = numeric_imputer.transform(X_train_num)
+X_train_cat_imp = categorical_imputer.transform(X_train_cat)
 
-# Categorical / String feature stats
-print(X_raw.select_dtypes(exclude=np.number).describe())
+#We also need to split and transform our test data
+X_test_num = X_test_raw.select_dtypes(include=np.number)
+X_test_cat = X_test_raw.select_dtypes(exclude=np.number)
+X_test_num_imp = numeric_imputer.transform(X_test_num)
+X_test_cat_imp = categorical_imputer.transform(X_test_cat)
 
-print(pd.unique(X_raw['ocean_proximity']))
+# Scaler Object
+scaler = MinMaxScaler()
+# Fit on the numeric training data
+scaler.fit(X_train_num_imp)
+# Transform the training and test data
+X_train_num_sca = scaler.transform(X_train_num_imp)
+X_test_num_sca = scaler.transform(X_test_num_imp)
 
-# The varible that the model is testing with the target.
+# create the encoder object
+encoder = OneHotEncoder(handle_unknown='ignore')
+# Fit encoder on teh training data
+encoder.fit(X_train_cat_imp)
+# Transform the test and train data
+X_train_onehot = encoder.transform(X_train_cat_imp).toarray()
+X_test_onehot = encoder.transform(X_test_cat_imp).toarray()
+
+print("X_train_num_sca shape:", X_train_num_sca.shape)
+print("X_train_onehot shape:", X_train_onehot.shape)
+
+X_train = np.concatenate([X_train_num_sca, X_train_onehot], axis=1)
+X_test = np.concatenate([X_test_num_sca, X_test_onehot], axis=1)
+
+# We can see the scaled test results and the OHE category columns now.
+print(X_train)
+
+
 features = ['ocean_proximity']
 X_raw_features = X_raw[features]
 
-# Preprocessing.
+###############
+# Preprocessing
+###############
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw_features, y_raw, test_size=0.20, shuffle=True, random_state=0)
 
-# Separates the databse into 80% and 20% for training and testing.
-X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw_features, y_raw, train_size=0.80, test_size=0.20, shuffle=True, random_state=0)
+# Here we only have numerical data, so could skip this step.
 X_train_num = X_train_raw.select_dtypes(include=np.number)
 
-# Create our imputer objects.
+# Create our imputer objects
 numeric_imputer = SimpleImputer(strategy='mean')
 
-# Fit the imputers on the training data.
+# Fit the imputers on the training data
 numeric_imputer.fit(X_train_num)
 
-# Training.
+# Transform the columns
+# Training
 X_train_num_imp = numeric_imputer.transform(X_train_num)
 
-# Split and transform our test data.
+#We also need to split and transform our test data
 X_test_num = X_test_raw.select_dtypes(include=np.number)
 X_test_num_imp = numeric_imputer.transform(X_test_num)
 
-# Feature scalling
-# Scaler Object.
+# Scaler Object
 scaler = MinMaxScaler()
-# Fit on the numeric training data.
+# Fit on the numeric training data
 scaler.fit(X_train_num_imp)
-# Transform the training and test data.
+# Transform the training and test data
 X_train_num_sca = scaler.transform(X_train_num_imp)
 X_test_num_sca = scaler.transform(X_test_num_imp)
 
 X_train = X_train_num_sca
 X_test = X_test_num_sca
 
-# Create linear regression object.
+###################
+# End preprocessing
+###################
+
+# Create linear regression object
 obj = sklearn.linear_model.LinearRegression()
 
-# Train the model using the training sets.
+# Train the model using the training sets
 obj.fit(X_train, y_train)
 
 # We can make a prediction with the training data
 y_pred_train = obj.predict(X_train)
 # Remember the predictions with the new data give a better indiction of the true model performance.
-# Make predictions using the testing set.
+# Make predictions using the testing set
 y_pred = obj.predict(X_test)
 
-# Choosen a single column of the feature matrix so we can plot a 2D scatter plot.
-X_disp = X_test[:,0] 
+# I decided that for visualisation i wanted to use mock1.
+X_disp = X_test[:,0] # We have to choose a single column of the feature matrix so we can plot a 2D scatter plot.
 
 # Plot outputs
-plt.scatter(X_disp, y_test,  color='black', label='y_test')
-plt.scatter(X_disp, y_pred, color='blue', label='y_pred') 
-plt.xlabel('Ocean Proximity')
+plt.scatter(X_disp, y_test,  color='black', label='y_test') # Observed y values
+plt.scatter(X_disp, y_pred, color='blue', label='y_pred') # predicted y values
+plt.xlabel('Feature')
 plt.ylabel('Median House Value')
 plt.legend()
 plt.show()
 
-# Regression metrics for both training and testing sets
-mae_train = mean_absolute_error(y_train, y_pred_train)
-rmse_train = np.sqrt(mean_squared_error(y_train, y_pred_train))
-max_err_train = max_error(y_train, y_pred_train)
-medae_train = median_absolute_error(y_train, y_pred_train)
-
-mae_test = mean_absolute_error(y_test, y_pred)
-rmse_test = np.sqrt(mean_squared_error(y_test, y_pred))
-max_err_test = max_error(y_test, y_pred)
-medae_test = median_absolute_error(y_test, y_pred)
-
-# Prints the regression metrics for both training and testing sets
-print('Train - MSE: {:.4f} R2 score: {:.4f}'.format(mean_squared_error(y_train, y_pred_train), r2_score(y_train, y_pred_train)))
-print('Test - MSE: {:.4f} R2 score: {:.4f}'.format(mean_squared_error(y_test, y_pred), r2_score(y_test, y_pred)))
-print('Train - MAE: {:.4f}'.format(mae_train))
-print('Test - MAE: {:.4f}'.format(mae_test))
-print('Train - RMSE: {:.4f}'.format(rmse_train))
-print('Test - RMSE: {:.4f}'.format(rmse_test))
-print('Train - Max Error: {:.4f}'.format(max_err_train))
-print('Test - Max Error: {:.4f}'.format(max_err_test))
-print('Train - Median Absolute Error: {:.4f}'.format(medae_train))
-print('Test - Median Absolute Error: {:.4f}'.format(medae_test))
+# The mean squared error loss and R2 for the test and train data
+print('Train - MSE: {:.4f} R2 score: {:.4f}'.format(sklearn.metrics.mean_squared_error(y_train, y_pred_train),sklearn.metrics.r2_score(y_train, y_pred_train)))
+print('Test - MSE: {:.4f} R2 score: {:.4f}'.format(sklearn.metrics.mean_squared_error(y_test, y_pred),sklearn.metrics.r2_score(y_test, y_pred)))
