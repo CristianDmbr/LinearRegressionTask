@@ -67,7 +67,6 @@ X_test_oneHotEncoder = encoder.transform(X_test_categorical_imputated)
 X_train_oneHotEncoder_dense = X_train_oneHotEncoder.toarray()
 X_test_oneHotEncoder_dense = X_test_oneHotEncoder.toarray()
 
-
 # Combine the two numerical and categorical matrix 
 #X_train = np.concatenate([X_train_numerical_scaled, X_train_oneHotEncoder_dense], axis = 1)
 #X_test = np.concatenate([X_test_numerical_scaled, X_test_oneHotEncoder_dense], axis = 1)

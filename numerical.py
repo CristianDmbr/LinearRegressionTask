@@ -18,6 +18,8 @@ features = ["housing_median_age"]
 X_raw = testData[features]
 y_raw = testData["median_house_value"]
 
+print(testData.describe())
+
 X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.20, shuffle=True, random_state=0)
 
 # The training data is separated into numerical features and categorical features
@@ -38,7 +40,7 @@ X_train_numerical_imputated = numeric_imputer.transform(X_train_numerical)
 
 # Split the database into testing sets and fill in any missing values with imputers
 X_test_numerical = X_test_raw.select_dtypes(include=np.number)
-X_test_categorical = X_test_raw.select_dtypes(exclude=np.number)
+X_test_categorical = X_test_raw.sselect_dtypes(exclude=np.number)
 X_test_numerical_imputated = numeric_imputer.transform(X_test_numerical)
 #X_test_categorical_imputated = categorical_imputer.transform(X_test_categorical)
 
@@ -54,7 +56,7 @@ X_test_numerical_scaled = scaler.transform(X_test_numerical_imputated)
 
 # Creates the encoder object, the handle_unknown = "ignore" parameters sets any category that has not been seen 
 # as a 0
-encoder = OneHotEncoder(handle_unknown="ignore")
+#encoder = OneHotEncoder(handle_unknown="ignore")
 
 # The encoder is fited on the training imputated categorical data
 #encoder.fit(X_train_categorical_imputated)
