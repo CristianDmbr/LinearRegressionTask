@@ -76,25 +76,19 @@ print('Test - R2 score: {:.4f}'.format(r2_testing_Testing))
 print('Test - MAPE: {:.4f}'.format(mape_Testing))
 print('Test - MSE: {:.4f}'.format(mse_Testing))
 
-# Visualise : 
 # Visualize
 plt.figure(figsize=(10, 6))
 
-# Plot actual data
-plt.scatter(y_test, y_prediction, color='blue', label='Actual vs Predicted')
+# Plot actual vs predicted values
+plt.scatter(y_test, y_test, color='blue', label='Actual', alpha=0.5)  # Plot actual values
+plt.scatter(y_test, y_prediction, color='red', label='Predicted', alpha=0.5)  # Plot predicted values
 
 # Plotting the polynomial curve
-plt.plot(np.linspace(0, np.max(y_test), 100), 
-         model.predict(scaler.transform(poly.transform(np.concatenate((
-             np.linspace(0, np.max(y_test), 100).reshape(-1, 1),  # Reshape because poly.transform expects 2D array
-             np.ones((100, X_train_encoded.shape[1] - 1))  # Fill other features with ones (assuming no impact)
-         ), axis=1)))), 
-         color='red', label='Polynomial Curve')
+plt.plot(y_test, y_test, color='green', label='Perfect Prediction')  # Plot perfect prediction line
 
 plt.title('Actual vs Predicted')
-plt.xlabel('Actual Values')
-plt.ylabel('Predicted Values')
+plt.xlabel('Median House Value (Actual)')
+plt.ylabel('Median House Value (Predicted)')
 plt.legend()
 plt.grid(True)
 plt.show()
-
