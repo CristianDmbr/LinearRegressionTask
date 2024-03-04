@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+import seaborn as sns
+from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn import tree
+from sklearn.neural_network import MLPClassifier  
 
 # Load dataset
 testData = pd.read_csv('Databases/Titanic_coursework_entire_dataset_23-24.cvs.csv')
@@ -18,11 +20,7 @@ X_raw = testData[features]
 y_raw = testData["Survival"]
 
 # Split data into training and testing sets
-X_train_raw = X_raw[:650]
-y_train = y_raw[:650]
-
-X_test_raw = X_raw[650:]
-y_test = y_raw[650:]
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42)
 
 # Separate numerical and categorical features
 numerical_features = X_raw.select_dtypes(include=np.number)
@@ -52,16 +50,13 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# Decision tree classifier
-clf = DecisionTreeClassifier(random_state=0, max_depth=3, splitter = "best",
-                            min_samples_split = 3, min_samples_leaf = 5,
-                            max_features = None, ccp_alpha = 0, max_leaf_nodes = 10,
-                            min_impurity_decrease = 0)  # Limiting the depth for better visualization
-clf.fit(X_train_scaled, y_train)
+# Neural Network Classifier
+mlp = MLPClassifier(hidden_layer_sizes=(100, ), max_iter=500)  # Adjust hidden layer sizes as needed
+mlp.fit(X_train_scaled, y_train)
 
 # Predictions
-y_pred_train = clf.predict(X_train_scaled)
-y_pred_test = clf.predict(X_test_scaled)
+y_pred_train = mlp.predict(X_train_scaled)
+y_pred_test = mlp.predict(X_test_scaled)
 
 # Metrics
 print("\nTraining Metrics:")
@@ -74,13 +69,11 @@ print("Accuracy:", accuracy_score(y_test, y_pred_test))
 print("Classification Report:\n", classification_report(y_test, y_pred_test))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_test))
 
-# Get feature names after one-hot encoding
-encoded_feature_names = encoder.get_feature_names_out(input_features=categorical_features.columns)
-
-# Concatenate numerical and encoded categorical feature names
-all_feature_names = numerical_features.columns.tolist() + encoded_feature_names.tolist()
-
-# Visualize decision tree
-plt.figure(figsize=(15,10))
-tree.plot_tree(clf, feature_names=all_feature_names, class_names=["Not Survived", "Survived"], filled=True)
+# Visualize the Neural Network
+fig, ax = plt.subplots(figsize=(10, 8))
+mlp.coefs_[0] = np.transpose(mlp.coefs_[0])  # Transpose the weights for visualization
+sns.heatmap(mlp.coefs_[0], annot=True, fmt=".2f", cmap="YlGnBu", ax=ax)
+ax.set_title('Neural Network Weights Visualization')
+plt.xlabel('Input Features')
+plt.ylabel('Hidden Units')
 plt.show()

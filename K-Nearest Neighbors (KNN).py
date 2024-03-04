@@ -5,7 +5,7 @@ from sklearn.impute import SimpleImputer
 import seaborn as sns
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from sklearn.neighbors import KNeighborsClassifier  # Changed import
+from sklearn.neighbors import KNeighborsClassifier 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 # Load dataset
