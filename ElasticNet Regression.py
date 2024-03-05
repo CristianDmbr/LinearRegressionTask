@@ -3,17 +3,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler,MinMaxScaler ,OneHotEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, median_absolute_error, mean_squared_log_error
 
 # Load dataset
 testData = pd.read_csv('Databases/housing_coursework_entire_dataset_23-24.csv')
 
 # Define features and target variable
-features = ["longitude", "latitude", "housing_median_age", "total_rooms", "total_bedrooms", "population", "households", "median_income", "ocean_proximity"]
+features = ["No.","longitude", "latitude", "housing_median_age", "total_rooms", "total_bedrooms", "population", "households", "median_income", "ocean_proximity"]
 X_raw = testData[features]
 y_raw = testData["median_house_value"]
+
+X_raw = X_raw.drop(columns=['No.'])
 
 # Split data into training and testing sets
 X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.20, random_state=0)
@@ -46,32 +48,57 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# Define hyperparameters
-alpha_value = 0.2
-l1_ratio_value = 0.3
-fit_intercept_value = True
-max_iter_value = 100
-tol_value = 1e-4
-
 # Create ElasticNet model with specified hyperparameters
-model = ElasticNet(alpha=alpha_value, l1_ratio=l1_ratio_value, fit_intercept=fit_intercept_value,
-                   max_iter=max_iter_value, tol=tol_value)
+model = ElasticNet(alpha=0.01, 
+                    l1_ratio=0.1,
+                    fit_intercept=True,
+                    max_iter=300,
+                    tol=0.1)
 
 # Fit the model
 model.fit(X_train_scaled, y_train)
+y_pred_train = model.predict(X_train_scaled)
 y_pred_test = model.predict(X_test_scaled)
 
-# Metrics
+# Metrics for training set
+mae_train = mean_absolute_error(y_train, y_pred_train)
+rmse_train = mean_squared_error(y_train, y_pred_train, squared=False)
+r2_train = r2_score(y_train, y_pred_train)
+medae_train = median_absolute_error(y_train, y_pred_train)
+# msle_train = mean_squared_log_error(y_train, y_pred_train)  # Remove this line
+mape_train = np.mean(np.abs((y_train - y_pred_train) / y_train)) * 100
+mse_train = mean_squared_error(y_train, y_pred_train)
+
+# Metrics for testing set
 mae_test = mean_absolute_error(y_test, y_pred_test)
 rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
 r2_test = r2_score(y_test, y_pred_test)
+medae_test = median_absolute_error(y_test, y_pred_test)
+# msle_test = mean_squared_log_error(y_test, y_pred_test)  # Remove this line
+mape_test = np.mean(np.abs((y_test - y_pred_test) / y_test)) * 100
+mse_test = mean_squared_error(y_test, y_pred_test)
 
-# Print metrics
-print('Test - MAE: {:.4f}'.format(mae_test))
-print('Test - RMSE: {:.4f}'.format(rmse_test))
-print('Test - R2 score: {:.4f}'.format(r2_test))
+# Print metrics for training set
+print("\n Training Metrics : ")
+print('Training - MAE: {:.4f}'.format(mae_train))
+print('Training - RMSE: {:.4f}'.format(rmse_train))
+print('Training - R2 score: {:.4f}'.format(r2_train))
+print('Training - Median Absolute Error: {:.4f}'.format(medae_train))
+# print('Training - Mean Squared Log Error: {:.4f}'.format(msle_train))
+print('Training - MAPE: {:.4f}'.format(mape_train))
+print('Training - MSE: {:.4f}'.format(mse_train))
 
-# Plotting
+# Print metrics for testing set
+print("\n Testing Metrics : ")
+print('Testing - MAE: {:.4f}'.format(mae_test))
+print('Testing - RMSE: {:.4f}'.format(rmse_test))
+print('Testing - R2 score: {:.4f}'.format(r2_test))
+print('Testing - Median Absolute Error: {:.4f}'.format(medae_test))
+# print('Testing - Mean Squared Log Error: {:.4f}'.format(msle_test))
+print('Testing - MAPE: {:.4f}'.format(mape_test))
+print('Testing - MSE: {:.4f}'.format(mse_test))
+
+# Visualize
 plt.figure(figsize=(10, 6))
 
 # Scatter plot of data
@@ -86,9 +113,4 @@ plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='red'
 # Labels and title
 plt.xlabel('Actual')
 plt.ylabel('Predicted')
-plt.title('Elastic Net Regression')
-
-# Legend
-plt.legend()
-
 plt.show()

@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler,MinMaxScaler , OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, median_absolute_error, mean_squared_log_error
+from sklearn.model_selection import GridSearchCV
 
 # Read data
 testData = pd.read_csv('Databases/housing_coursework_entire_dataset_23-24.csv')
@@ -48,13 +49,29 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# Train the model
-model = LinearRegression(fit_intercept = True)
-model.fit(X_train_scaled, y_train)
+# Define the parameter grid
+param_grid = {
+    'fit_intercept': [True, False]
+}
+
+
+# Create the GridSearchCV object
+grid_search = GridSearchCV(LinearRegression(), param_grid, cv=5, scoring='neg_mean_squared_error')
+
+# Perform the grid search
+grid_search.fit(X_train_scaled, y_train)
+
+# Get the best parameters
+best_params = grid_search.best_params_
+print("Best hyperparameters:", best_params)
+
+# Train the model with the best parameters
+best_model = LinearRegression(**best_params)
+best_model.fit(X_train_scaled, y_train)
 
 # Make predictions
-y_pred_train = model.predict(X_train_scaled)
-y_pred_test = model.predict(X_test_scaled)
+y_pred_train = best_model.predict(X_train_scaled)
+y_pred_test = best_model.predict(X_test_scaled)
 
 # Evaluate the model
 mae_train = mean_absolute_error(y_train, y_pred_train)
@@ -81,22 +98,3 @@ print("Test RMSE:", rmse_test)
 print("Test R^2:", r2_test)
 print("Test MSE:", mse_test)
 print("Test MEDAE:", medae_test)
-
-# Plotting actual vs predicted values for testing set
-plt.figure(figsize=(12, 6))
-
-# Plotting actual data points
-plt.scatter(y_test, y_test, color='blue', label='Actual', alpha=0.5)
-
-# Plotting predicted data points
-plt.scatter(y_test, y_pred_test, color='red', label='Predicted', alpha=0.5)
-
-# Plotting the regression line
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='green', linestyle='--', lw=2, label='Regression Line')
-
-# Labels and title
-plt.xlabel('Actual')
-plt.ylabel('Predicted')
-plt.title('Actual vs Predicted (Testing Set)')
-plt.legend()
-plt.show()

@@ -6,6 +6,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, median_absolute_error, mean_squared_log_error
+from sklearn.model_selection import GridSearchCV
+
 
 # Read the data
 testData = pd.read_csv('Databases/housing_coursework_entire_dataset_23-24.csv')
@@ -48,55 +50,64 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# Train the random forest regressor
-randomForest = RandomForestRegressor(n_estimators=100, 
-                                    max_depth=9, 
-                                    min_samples_split=5,
-                                     min_samples_leaf=10,
-                                      random_state=0)
-randomForest.fit(X_train_scaled, y_train)
+# Define the parameter grid
+param_grid = {
+    'n_estimators': [50, 100, 150],
+    'max_depth': [5, 10, 15],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 5, 10]
+}
+
+# Create the grid search object
+grid_search = GridSearchCV(estimator=RandomForestRegressor(random_state=0),
+                           param_grid=param_grid,
+                           cv=5,
+                           n_jobs=-1,
+                           scoring='neg_mean_squared_error',
+                           verbose=2)
+
+# Fit the grid search to the data
+grid_search.fit(X_train_scaled, y_train)
+
+# Print the best parameters found
+print("Best parameters found:")
+print(grid_search.best_params_)
+
+# Get the best estimator
+best_rf = grid_search.best_estimator_
 
 # Predictions
-y_pred_train = randomForest.predict(X_train_scaled)
-y_pred_test = randomForest.predict(X_test_scaled)
+y_pred_train_best = best_rf.predict(X_train_scaled)
+y_pred_test_best = best_rf.predict(X_test_scaled)
 
 # Calculate metrics for training set
-mae_train = mean_absolute_error(y_train, y_pred_train)
-rmse_train = mean_squared_error(y_train, y_pred_train, squared=False)
-r2_train = r2_score(y_train, y_pred_train)
-mse_train = mean_squared_error(y_train, y_pred_train)
-medae_train = median_absolute_error(y_train, y_pred_train)
-msle_train = mean_squared_log_error(y_train, y_pred_train)
+mae_train_best = mean_absolute_error(y_train, y_pred_train_best)
+rmse_train_best = mean_squared_error(y_train, y_pred_train_best, squared=False)
+r2_train_best = r2_score(y_train, y_pred_train_best)
+mse_train_best = mean_squared_error(y_train, y_pred_train_best)
+medae_train_best = median_absolute_error(y_train, y_pred_train_best)
+msle_train_best = mean_squared_log_error(y_train, y_pred_train_best)
 
 # Calculate metrics for testing set
-mae_test = mean_absolute_error(y_test, y_pred_test)
-rmse_test = mean_squared_error(y_test, y_pred_test, squared=False)
-r2_test = r2_score(y_test, y_pred_test)
-mse_test = mean_squared_error(y_test, y_pred_test)
-medae_test = median_absolute_error(y_test, y_pred_test)
-msle_test = mean_squared_log_error(y_test, y_pred_test)
+mae_test_best = mean_absolute_error(y_test, y_pred_test_best)
+rmse_test_best = mean_squared_error(y_test, y_pred_test_best, squared=False)
+r2_test_best = r2_score(y_test, y_pred_test_best)
+mse_test_best = mean_squared_error(y_test, y_pred_test_best)
+medae_test_best = median_absolute_error(y_test, y_pred_test_best)
+msle_test_best = mean_squared_log_error(y_test, y_pred_test_best)
 
 # Print metrics for training set
-print('Training - MAE: {:.4f}'.format(mae_train))
-print('Training - RMSE: {:.4f}'.format(rmse_train))
-print('Training - R2 score: {:.4f}'.format(r2_train))
-print('Training - MSE: {:.4f}'.format(mse_train))
-print('Training - Median Absolute Error: {:.4f}'.format(medae_train))
-print('Training - Mean Squared Log Error: {:.4f}'.format(msle_train))
+print('\nTraining - MAE: {:.4f}'.format(mae_train_best))
+print('Training - RMSE: {:.4f}'.format(rmse_train_best))
+print('Training - R2 score: {:.4f}'.format(r2_train_best))
+print('Training - MSE: {:.4f}'.format(mse_train_best))
+print('Training - Median Absolute Error: {:.4f}'.format(medae_train_best))
+print('Training - Mean Squared Log Error: {:.4f}'.format(msle_train_best))
 
 # Print metrics for testing set
-print('Testing - MAE: {:.4f}'.format(mae_test))
-print('Testing - RMSE: {:.4f}'.format(rmse_test))
-print('Testing - R2 score: {:.4f}'.format(r2_test))
-print('Testing - MSE: {:.4f}'.format(mse_test))
-print('Testing - Median Absolute Error: {:.4f}'.format(medae_test))
-print('Testing - Mean Squared Log Error: {:.4f}'.format(msle_test))
-
-# Visualize the model's predictions
-plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred_test, color='blue')
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
-plt.xlabel('Actual Values')
-plt.ylabel('Predicted Values')
-plt.title('Actual vs Predicted Values (Random Forest)')
-plt.show()
+print('\nTesting - MAE: {:.4f}'.format(mae_test_best))
+print('Testing - RMSE: {:.4f}'.format(rmse_test_best))
+print('Testing - R2 score: {:.4f}'.format(r2_test_best))
+print('Testing - MSE: {:.4f}'.format(mse_test_best))
+print('Testing - Median Absolute Error: {:.4f}'.format(medae_test_best))
+print('Testing - Mean Squared Log Error: {:.4f}'.format(msle_test_best))
