@@ -5,8 +5,7 @@ from sklearn.impute import SimpleImputer
 from sklearn import tree
 import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_curve, roc_curve, auc
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_curve, roc_curve, auc, precision_recall_fscore_support
 
 testData = pd.read_csv('Databases/Titanic_coursework_entire_dataset_23-24.cvs.csv')
 
@@ -22,7 +21,6 @@ y_train = y_raw[:650]
 
 X_test_raw = X_raw[650:]
 y_test = y_raw[650:]
-
 
 # Separate numerical and categorical features
 numerical_features = X_raw.select_dtypes(include=np.number)
@@ -54,7 +52,11 @@ X_test_scaled = scaler.transform(X_test_encoded)
 
 # Decision tree classifier
 # Best Hyperparameters: {'ccp_alpha': 0, 'max_depth': 7, 'min_samples_leaf': 4, 'min_samples_split': 2}
-clf = DecisionTreeClassifier(random_state=0, max_depth=7, min_samples_split=2, min_samples_leaf=4, ccp_alpha=0)  
+clf = DecisionTreeClassifier(random_state=0, 
+                            max_depth=7, 
+                            min_samples_split=2, 
+                            min_samples_leaf=4, 
+                            ccp_alpha=0)  
 clf.fit(X_train_scaled, y_train)
 
 clf.fit(X_train_scaled, y_train)
