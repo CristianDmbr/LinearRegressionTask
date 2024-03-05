@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler,MinMaxScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 import seaborn as sns
 from sklearn.decomposition import PCA
+from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_curve, roc_curve, auc, precision_recall_fscore_support
@@ -27,44 +28,59 @@ y_test = y_raw[650:]
 numerical_features = X_raw.select_dtypes(include=np.number)
 categorical_features = X_raw.select_dtypes(exclude=np.number)
 
-# Imputes missing values for numerical features
+# Impute missing values for numerical features
 numeric_imputer = SimpleImputer(strategy="mean")
 X_train_numerical_imputed = numeric_imputer.fit_transform(X_train_raw[numerical_features.columns])
 X_test_numerical_imputed = numeric_imputer.transform(X_test_raw[numerical_features.columns])
 
-# Imputes missing values for categorical features
+# Impute missing values for categorical features
 categoric_imputer = SimpleImputer(strategy="most_frequent")
 X_train_categorical_imputed = categoric_imputer.fit_transform(X_train_raw[categorical_features.columns])
 X_test_categorical_imputed = categoric_imputer.transform(X_test_raw[categorical_features.columns])
 
-# Encodes categorical features
+# Encode categorical features
 encoder = OneHotEncoder()
 X_train_categorical_encoded = encoder.fit_transform(X_train_categorical_imputed).toarray()
 X_test_categorical_encoded = encoder.transform(X_test_categorical_imputed).toarray()
 
-# Concatenates numerical and encoded categorical features
+# Concatenate numerical and encoded categorical features
 X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical_encoded), axis=1)
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
-# Scales numerical features
+# Scale numerical features
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# K Nearest Neighbors Classifier
-knn = KNeighborsClassifier(n_neighbors=5, 
-                            weights='uniform', 
-                            algorithm='auto', 
-                            leaf_size=20, 
-                            p=1, 
-                            metric='manhattan')
+# Define the parameter grid
+param_grid = {
+    'n_neighbors': [3, 5, 7, 9],  # Number of neighbors to consider
+    'weights': ['uniform', 'distance'],  # Weight function used in prediction
+    'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],  # Algorithm used to compute nearest neighbors
+    'leaf_size': [20, 30, 40],  # Leaf size for tree-based algorithms
+    'p': [1, 2],  # Power parameter for the Minkowski metric
+    'metric': ['euclidean', 'manhattan']  # Distance metric
+}
+
+# Instantiate KNN classifier
+knn = KNeighborsClassifier()
 knn.fit(X_train_scaled, y_train)
 
-# Predictions
-y_pred_train = knn.predict(X_train_scaled)
-y_pred_test = knn.predict(X_test_scaled)
+# Perform grid search with cross-validation
+grid_search = GridSearchCV(knn, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X_train_scaled, y_train)
 
-# Metrics 
+# Print the best hyperparameters found
+print("Best hyperparameters:", grid_search.best_params_)
+
+# Get the best model
+best_knn = grid_search.best_estimator_
+
+# Predictions
+y_pred_train = best_knn.predict(X_train_scaled)
+y_pred_test = best_knn.predict(X_test_scaled)
+
+# Metrics
 precision, recall, f1_score, support = precision_recall_fscore_support(y_test, y_pred_test)
 precision_train, recall_train, f1_score_train, support_train = precision_recall_fscore_support(y_train, y_pred_train)
 precision_test_avg = sum(precision)/len(precision)
@@ -103,7 +119,7 @@ fpr, tpr, _ = roc_curve(y_test, y_pred_test)
 roc_auc = auc(fpr, tpr)
 print("ROC AUC:", roc_auc)
 
-# PCA to reduces dimensionality for visualization
+# Apply PCA to reduce dimensionality for visualization
 pca = PCA(n_components=2)
 X_train_pca = pca.fit_transform(X_train_scaled)
 X_test_pca = pca.transform(X_test_scaled)
@@ -112,7 +128,7 @@ X_test_pca = pca.transform(X_test_scaled)
 knn_pca = KNeighborsClassifier(n_neighbors=5)
 knn_pca.fit(X_train_pca, y_train)
 
-# Plotting using PCA-transformed features
+# Plotting decision boundaries using PCA-transformed features
 x_min, x_max = X_train_pca[:, 0].min() - 1, X_train_pca[:, 0].max() + 1
 y_min, y_max = X_train_pca[:, 1].min() - 1, X_train_pca[:, 1].max() + 1
 xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),

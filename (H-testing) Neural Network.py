@@ -1,70 +1,89 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler,MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler,MinMaxScaler ,OneHotEncoder
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 import seaborn as sns
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from sklearn.neighbors import KNeighborsClassifier 
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, precision_recall_curve, roc_curve, auc, precision_recall_fscore_support
+from sklearn.model_selection import GridSearchCV
+from sklearn.neural_network import MLPClassifier  
 
+# Load dataset
 testData = pd.read_csv('Databases/Titanic_coursework_entire_dataset_23-24.cvs.csv')
 
-features = ["PassengerId","Pclass", "Age", "SibSp", "Parch", "Fare", "Sex", "Embarked"]
+# Define features and target variable
+features = ["Pclass", "Age", "SibSp", "Parch", "Fare", "Sex", "Embarked"]
+
+# Slice the dataset
 X_raw = testData[features]
 y_raw = testData["Survival"]
 
-X_raw = X_raw.drop(columns=["PassengerId"])
-
-# Split data into 650 training sets and 240 testing sets
-X_train_raw = X_raw[:650]
-y_train = y_raw[:650]
-
-X_test_raw = X_raw[650:]
-y_test = y_raw[650:]
+# Split data into training and testing sets
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(X_raw, y_raw, test_size=0.2, random_state=42)
 
 # Separate numerical and categorical features
 numerical_features = X_raw.select_dtypes(include=np.number)
 categorical_features = X_raw.select_dtypes(exclude=np.number)
 
-# Imputes missing values for numerical features
+# Impute missing values for numerical features
 numeric_imputer = SimpleImputer(strategy="mean")
 X_train_numerical_imputed = numeric_imputer.fit_transform(X_train_raw[numerical_features.columns])
 X_test_numerical_imputed = numeric_imputer.transform(X_test_raw[numerical_features.columns])
 
-# Imputes missing values for categorical features
+# Impute missing values for categorical features
 categoric_imputer = SimpleImputer(strategy="most_frequent")
 X_train_categorical_imputed = categoric_imputer.fit_transform(X_train_raw[categorical_features.columns])
 X_test_categorical_imputed = categoric_imputer.transform(X_test_raw[categorical_features.columns])
 
-# Encodes categorical features
+# Encode categorical features
 encoder = OneHotEncoder()
 X_train_categorical_encoded = encoder.fit_transform(X_train_categorical_imputed).toarray()
 X_test_categorical_encoded = encoder.transform(X_test_categorical_imputed).toarray()
 
-# Concatenates numerical and encoded categorical features
+# Concatenate numerical and encoded categorical features
 X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical_encoded), axis=1)
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
-# Scales numerical features
+# Scale numerical features
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
-# K Nearest Neighbors Classifier
-knn = KNeighborsClassifier(n_neighbors=5, 
-                            weights='uniform', 
-                            algorithm='auto', 
-                            leaf_size=20, 
-                            p=1, 
-                            metric='manhattan')
-knn.fit(X_train_scaled, y_train)
+
+param_grid = {
+    'hidden_layer_sizes': [(50,), (100,), (150,)],
+    'activation': ['relu', 'logistic', 'tanh'],
+    'solver': ['adam', 'sgd'],
+    'alpha': [0.0001, 0.001, 0.01],
+    'learning_rate': ['constant', 'adaptive', 'invscaling'],
+    'max_iter': [10000] 
+}
+
+# Create GridSearchCV object
+grid_search = GridSearchCV(estimator=MLPClassifier(), param_grid=param_grid, cv=5, scoring='accuracy')
+
+# Perform grid search
+grid_search.fit(X_train_scaled, y_train)
+
+# Get best parameters and best score
+best_params = grid_search.best_params_
+best_score = grid_search.best_score_
+
+print("Best Parameters:", best_params)
+print("Best Score:", best_score)
+
+# Use the best parameters to train the model
+best_mlp = MLPClassifier(**best_params)
+best_mlp.fit(X_train_scaled, y_train)
 
 # Predictions
-y_pred_train = knn.predict(X_train_scaled)
-y_pred_test = knn.predict(X_test_scaled)
+y_pred_train = best_mlp.predict(X_train_scaled)
+y_pred_test = best_mlp.predict(X_test_scaled)
 
-# Metrics 
+
+# Metrics
 precision, recall, f1_score, support = precision_recall_fscore_support(y_test, y_pred_test)
 precision_train, recall_train, f1_score_train, support_train = precision_recall_fscore_support(y_train, y_pred_train)
 precision_test_avg = sum(precision)/len(precision)
@@ -102,28 +121,3 @@ print("F1-Score :", f1_score_test)
 fpr, tpr, _ = roc_curve(y_test, y_pred_test)
 roc_auc = auc(fpr, tpr)
 print("ROC AUC:", roc_auc)
-
-# PCA to reduces dimensionality for visualization
-pca = PCA(n_components=2)
-X_train_pca = pca.fit_transform(X_train_scaled)
-X_test_pca = pca.transform(X_test_scaled)
-
-# K Nearest Neighbors Classifier with PCA-transformed features
-knn_pca = KNeighborsClassifier(n_neighbors=5)
-knn_pca.fit(X_train_pca, y_train)
-
-# Plotting using PCA-transformed features
-x_min, x_max = X_train_pca[:, 0].min() - 1, X_train_pca[:, 0].max() + 1
-y_min, y_max = X_train_pca[:, 1].min() - 1, X_train_pca[:, 1].max() + 1
-xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
-                     np.arange(y_min, y_max, 0.1))
-
-Z = knn_pca.predict(np.c_[xx.ravel(), yy.ravel()])
-
-plt.figure()
-plt.contourf(xx, yy, Z.reshape(xx.shape), alpha=0.4)
-plt.scatter(X_train_pca[:, 0], X_train_pca[:, 1], c=y_train, s=20, edgecolor='k')
-plt.title('K Nearest Neighbors Decision Boundaries (PCA)')
-plt.xlabel('Principal Component 1')
-plt.ylabel('Principal Component 2')
-plt.show()

@@ -49,7 +49,7 @@ X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
 # SVM Classifier
-svm_classifier = SVC(kernel='rbf', random_state=0, C = 10, gamma = 0.1)
+svm_classifier = SVC(kernel='rbf', random_state=0)
 svm_classifier.fit(X_train_scaled, y_train)
 
 # Predictions
