@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
@@ -44,16 +44,17 @@ X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
 # Scale numerical features
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train_encoded)
 X_test_scaled = scaler.transform(X_test_encoded)
 
 # Train the random forest regressor
-randomForest = RandomForestRegressor(n_estimators=100, 
-                                    max_depth=9, 
-                                    min_samples_split=5,
-                                     min_samples_leaf=10,
-                                      random_state=0)
+randomForest = RandomForestRegressor(n_estimators=150, 
+                                    max_depth=15, 
+                                    min_samples_split=2,
+                                    min_samples_leaf=5,
+                                    random_state=0
+                                    )
 randomForest.fit(X_train_scaled, y_train)
 
 # Predictions
@@ -77,6 +78,7 @@ medae_test = median_absolute_error(y_test, y_pred_test)
 msle_test = mean_squared_log_error(y_test, y_pred_test)
 
 # Print metrics for training set
+print("\n Training Metrics : ")
 print('Training - MAE: {:.4f}'.format(mae_train))
 print('Training - RMSE: {:.4f}'.format(rmse_train))
 print('Training - R2 score: {:.4f}'.format(r2_train))
@@ -85,6 +87,7 @@ print('Training - Median Absolute Error: {:.4f}'.format(medae_train))
 print('Training - Mean Squared Log Error: {:.4f}'.format(msle_train))
 
 # Print metrics for testing set
+print("\n Testing Metrics : ")
 print('Testing - MAE: {:.4f}'.format(mae_test))
 print('Testing - RMSE: {:.4f}'.format(rmse_test))
 print('Testing - R2 score: {:.4f}'.format(r2_test))
@@ -92,11 +95,22 @@ print('Testing - MSE: {:.4f}'.format(mse_test))
 print('Testing - Median Absolute Error: {:.4f}'.format(medae_test))
 print('Testing - Mean Squared Log Error: {:.4f}'.format(msle_test))
 
-# Visualize the model's predictions
+# Plotting actual vs predicted values for training set
 plt.figure(figsize=(10, 6))
-plt.scatter(y_test, y_pred_test, color='blue')
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--', lw=4)
+plt.scatter(y_train, y_pred_train, color='blue', label='Predicted')
+plt.plot([min(y_train), max(y_train)], [min(y_train), max(y_train)], color='red', linestyle='--', label='Actual')
+plt.title('Actual vs Predicted Values (Training Set)')
 plt.xlabel('Actual Values')
 plt.ylabel('Predicted Values')
-plt.title('Actual vs Predicted Values (Random Forest)')
+plt.legend()
+plt.show()
+
+# Plotting actual vs predicted values for testing set
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred_test, color='blue', label='Predicted')
+plt.plot([min(y_test), max(y_test)], [min(y_test), max(y_test)], color='red', linestyle='--', label='Actual')
+plt.title('Actual vs Predicted Values (Testing Set)')
+plt.xlabel('Actual Values')
+plt.ylabel('Predicted Values')
+plt.legend()
 plt.show()

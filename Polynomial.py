@@ -44,7 +44,7 @@ X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
 # Transform combined features
-poly = PolynomialFeatures(degree=3)
+poly = PolynomialFeatures(degree=2)
 poly.fit(X_train_encoded)
 X_train_Polynomial = poly.transform(X_train_encoded)
 X_test_Polynomial = poly.transform(X_test_encoded)

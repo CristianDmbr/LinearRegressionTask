@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures, StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -11,7 +12,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, m
 testData = pd.read_csv('Databases/housing_coursework_entire_dataset_23-24.csv')
 
 # Define features and target variable
-features = ["No.", "longitude", "latitude", "housing_median_age", "total_rooms", "total_bedrooms", "population", "households", "median_income", "ocean_proximity"]
+features = ["No.","longitude", "latitude", "housing_median_age", "total_rooms", "total_bedrooms", "population", "households", "median_income", "ocean_proximity"]
 X_raw = testData[features]
 y_raw = testData["median_house_value"]
 
@@ -44,69 +45,85 @@ X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
 # Transform combined features
-poly = PolynomialFeatures(degree=3)
-
-# Use polynomial transformation on training data
-X_train_Polynomial = poly.fit_transform(X_train_encoded)
-X_test_Polynomial = poly.transform(X_test_encoded)
-
-# Scale the polynomial features
+poly = PolynomialFeatures()
 scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train_Polynomial)
-X_test_scaled = scaler.transform(X_test_Polynomial)
 
-# Define the parameters grid
+# Define pipeline
+pipeline = Pipeline([
+    ('poly', poly),
+    ('scaler', scaler),
+    ('regressor', LinearRegression())
+])
+
+# Define parameter grid
 param_grid = {
-    'degree': [2, 3, 4],  # try different degrees of polynomial features
-    'interaction_only': [True, False],  # whether to consider only interaction features
-    'include_bias': [True, False]  # whether to include a bias column in the polynomial features
+    'poly__degree': [2, 3, 4],  # Try different polynomial degrees
 }
 
 # Initialize GridSearchCV
-grid_search = GridSearchCV(estimator=LinearRegression(), param_grid=param_grid, scoring='neg_mean_squared_error', cv=5)
+grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
 
-# Fit the grid search to find the best hyperparameters
-grid_search.fit(X_train_scaled, y_train)
+# Fit GridSearchCV
+grid_search.fit(X_train_encoded, y_train)
 
-# Get the best hyperparameters
+# Get best hyperparameters
 best_params = grid_search.best_params_
 print("Best Hyperparameters:", best_params)
 
-# Train the model with the best hyperparameters
+# Train the model with best hyperparameters
 best_model = grid_search.best_estimator_
-best_model.fit(X_train_scaled, y_train)
+best_model.fit(X_train_encoded, y_train)
 
 # Make predictions
-y_prediction_train_best = best_model.predict(X_train_scaled)
-y_prediction_test_best = best_model.predict(X_test_scaled)
+y_prediction_train = best_model.predict(X_train_encoded)
+y_prediction_test = best_model.predict(X_test_encoded)
 
 # Compute evaluation metrics
-mae_train_best = mean_absolute_error(y_train, y_prediction_train_best)
-mae_test_best = mean_absolute_error(y_test, y_prediction_test_best)
-rmse_train_best = mean_squared_error(y_train, y_prediction_train_best, squared=False)
-rmse_test_best = mean_squared_error(y_test, y_prediction_test_best, squared=False)
-r2_train_best = r2_score(y_train, y_prediction_train_best)
-r2_test_best = r2_score(y_test, y_prediction_test_best)
-mse_train_best = mean_squared_error(y_train, y_prediction_train_best)
-mse_test_best = mean_squared_error(y_test, y_prediction_test_best)
-medae_train_best = median_absolute_error(y_train, y_prediction_train_best)
-medae_test_best = median_absolute_error(y_test, y_prediction_test_best)
-mape_train_best = np.mean(np.abs((y_train - y_prediction_train_best) / y_train)) * 100
-mape_test_best = np.mean(np.abs((y_test - y_prediction_test_best) / y_test)) * 100
+mae_train = mean_absolute_error(y_train, y_prediction_train)
+mae_test = mean_absolute_error(y_test, y_prediction_test)
+rmse_train = mean_squared_error(y_train, y_prediction_train, squared=False)
+rmse_test = mean_squared_error(y_test, y_prediction_test, squared=False)
+r2_train = r2_score(y_train, y_prediction_train)
+r2_test = r2_score(y_test, y_prediction_test)
+mse_train = mean_squared_error(y_train, y_prediction_train)
+mse_test = mean_squared_error(y_test, y_prediction_test)
+medae_train = median_absolute_error(y_train, y_prediction_train)
+medae_test = median_absolute_error(y_test, y_prediction_test)
+mape_train = np.mean(np.abs((y_train - y_prediction_train) / y_train)) * 100
+mape_test = np.mean(np.abs((y_test - y_prediction_test) / y_test)) * 100
 
 # Print evaluation metrics
-print("\n Training Metrics (Best Model): ")
-print("Train MAE:", mae_train_best)
-print("Train RMSE:", rmse_train_best)
-print("Train R^2:", r2_train_best)
-print("Train MSE:", mse_train_best)
-print("Train MEDAE:", medae_train_best)
-print("Train MAPE:", mape_train_best)
+print("\n Training Metrics : ")
+print("Train MAE:", mae_train)
+print("Train RMSE:", rmse_train)
+print("Train R^2:", r2_train)
+print("Train MSE:", mse_train)
+print("Train MEDAE:", medae_train)
+print("Train MAPE:", mape_train)
 
-print("\n Testing Metrics (Best Model): ")
-print("Test MAE:", mae_test_best)
-print("Test RMSE:", rmse_test_best)
-print("Test R^2:", r2_test_best)
-print("Test MSE:", mse_test_best)
-print("Test MEDAE:", medae_test_best)
-print("Test MAPE:", mape_test_best)
+print("\n Testing Metrics : ")
+print("Test MAE:", mae_test)
+print("Test RMSE:", rmse_test)
+print("Test R^2:", r2_test)
+print("Test MSE:", mse_test)
+print("Test MEDAE:", medae_test)
+print("Test MAPE:", mape_test)
+
+# Plotting actual vs predicted values for testing set
+plt.figure(figsize=(12, 6))
+
+# Plotting actual data points
+plt.scatter(y_test, y_test, color='blue', label='Actual', alpha=0.5)
+
+# Plotting predicted data points
+plt.scatter(y_test, y_prediction_test, color='red', label='Predicted', alpha=0.5)
+
+# Plotting the regression line
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='green', linestyle='--', lw=2, label='Regression Line')
+
+# Labels and title
+plt.xlabel('Actual')
+plt.ylabel('Predicted')
+plt.title('Actual vs Predicted (Testing Set)')
+plt.legend()
+plt.show()
