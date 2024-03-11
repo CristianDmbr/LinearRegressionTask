@@ -9,11 +9,12 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 testData = pd.read_csv('Databases/Titanic_coursework_entire_dataset_23-24.cvs.csv')
 
-features = ["PassengerId","Pclass", "Age", "SibSp", "Parch", "Fare", "Sex", "Embarked"]
+features = ["PassengerId","Pclass","Name","Sex","Age","SibSp","Parch","Ticket","Fare","Embarked"]
 X_raw = testData[features]
 y_raw = testData["Survival"]
 
 X_raw = X_raw.drop(columns=["PassengerId"])
+X_raw = X_raw.drop(columns=["Name"])
 
 # Split data into 650 training sets and 240 testing sets
 X_train_raw = X_raw[:650]
@@ -37,8 +38,9 @@ X_train_categorical_imputed = categoric_imputer.fit_transform(X_train_raw[catego
 X_test_categorical_imputed = categoric_imputer.transform(X_test_raw[categorical_features.columns])
 
 # Encode categorical features
-encoder = OneHotEncoder()
+encoder = OneHotEncoder(handle_unknown='ignore')  # Ignore unknown categories
 X_train_categorical_encoded = encoder.fit_transform(X_train_categorical_imputed).toarray()
+# For test data, use the categories learned from the training data
 X_test_categorical_encoded = encoder.transform(X_test_categorical_imputed).toarray()
 
 # Concatenate numerical and encoded categorical features
@@ -54,8 +56,8 @@ X_test_scaled = scaler.transform(X_test_encoded)
 # Best Hyperparameters: {'ccp_alpha': 0, 'max_depth': 7, 'min_samples_leaf': 4, 'min_samples_split': 2}
 clf = DecisionTreeClassifier(random_state=0, 
                             max_depth=7, 
-                            min_samples_split=2, 
-                            min_samples_leaf=4, 
+                            min_samples_split=5, 
+                            min_samples_leaf=1, 
                             ccp_alpha=0)  
 clf.fit(X_train_scaled, y_train)
 
