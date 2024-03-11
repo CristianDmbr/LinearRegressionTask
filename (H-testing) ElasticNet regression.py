@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler,MinMaxScaler ,OneHotEncoder
+from sklearn.preprocessing import StandardScaler,OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, median_absolute_error, mean_squared_log_error
 from sklearn.model_selection import GridSearchCV

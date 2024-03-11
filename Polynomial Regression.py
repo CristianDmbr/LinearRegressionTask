@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures, StandardScaler, OneHotEncoder
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler, MinMaxScaler, OneHotEncoder
+from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, median_absolute_error
 
@@ -45,38 +44,24 @@ X_train_encoded = np.concatenate((X_train_numerical_imputed, X_train_categorical
 X_test_encoded = np.concatenate((X_test_numerical_imputed, X_test_categorical_encoded), axis=1)
 
 # Transform combined features
-poly = PolynomialFeatures()
+poly = PolynomialFeatures(degree=2)
+poly.fit(X_train_encoded)
+X_train_Polynomial = poly.transform(X_train_encoded)
+X_test_Polynomial = poly.transform(X_test_encoded)
+
+# Scale the polynomial features
 scaler = StandardScaler()
+scaler.fit(X_train_Polynomial)
+X_train_scaled = scaler.transform(X_train_Polynomial)
+X_test_scaled = scaler.transform(X_test_Polynomial)
 
-# Define pipeline
-pipeline = Pipeline([
-    ('poly', poly),
-    ('scaler', scaler),
-    ('regressor', LinearRegression())
-])
-
-# Define parameter grid
-param_grid = {
-    'poly__degree': [2, 3, 4],  # Try different polynomial degrees
-}
-
-# Initialize GridSearchCV
-grid_search = GridSearchCV(pipeline, param_grid, cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
-
-# Fit GridSearchCV
-grid_search.fit(X_train_encoded, y_train)
-
-# Get best hyperparameters
-best_params = grid_search.best_params_
-print("Best Hyperparameters:", best_params)
-
-# Train the model with best hyperparameters
-best_model = grid_search.best_estimator_
-best_model.fit(X_train_encoded, y_train)
+# Train the model
+model = LinearRegression()
+model.fit(X_train_scaled, y_train)
 
 # Make predictions
-y_prediction_train = best_model.predict(X_train_encoded)
-y_prediction_test = best_model.predict(X_test_encoded)
+y_prediction_train = model.predict(X_train_scaled)
+y_prediction_test = model.predict(X_test_scaled)
 
 # Compute evaluation metrics
 mae_train = mean_absolute_error(y_train, y_prediction_train)
